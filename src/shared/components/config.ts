@@ -9,4 +9,5 @@ export const appConfig = {
   db: {
     dsn: process.env.DATABASE_URL || "",
   },
+  jwtSecret: process.env.JWT_SECRET_KEY || 'NewSkyWin',
 };

@@ -116,7 +116,7 @@ export class TopicInMemoryRepository implements ITopicRepository {
     return Promise.resolve(data.length < initialLength);
   }
 
-  increateTopicPostCount(id: string): Promise<boolean> {
+  increaseTopicPostCount(id: string): Promise<boolean> {
     const topic = data.find((topic) => topic.id === id);
     if (!topic) {
       return Promise.resolve(false);

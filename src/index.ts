@@ -6,6 +6,7 @@ import { responseErr } from "@shared/ultils/error";
 import Logger from "@shared/ultils/logger";
 import { setupTopicModule } from "@modules/topic/module";
 import { checkConnection } from "@shared/components/prisma";
+import { setupUserModule } from "@modules/user/module";
 async function bootServer(port: number) {
 
   try {
@@ -20,7 +21,8 @@ async function bootServer(port: number) {
     // const server = createServer(app);
 
     const topicModule = setupTopicModule();
-
+    const userModule = setupUserModule();
+    app.use("/v1", userModule);
     app.use('/v1', topicModule);
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
