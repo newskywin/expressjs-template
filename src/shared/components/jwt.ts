@@ -1,9 +1,8 @@
 import { ITokenProvider, TokenPayload } from "@shared/interfaces";
 
 import jwt, { SignOptions } from "jsonwebtoken";
-import { appConfig } from "./config";
 
-class JwtTokenService implements ITokenProvider {
+export class JwtTokenService implements ITokenProvider {
   private readonly secretKey: string;
   private readonly expiresIn: SignOptions["expiresIn"];
 
@@ -27,5 +26,3 @@ class JwtTokenService implements ITokenProvider {
     }
   }
 }
-
-export const jwtProvider = new JwtTokenService(appConfig.jwtSecret, "7d");

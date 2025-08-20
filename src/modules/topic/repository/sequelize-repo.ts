@@ -1,9 +1,59 @@
 import { Paginated, PagingDTO } from "@shared/model/paging";
-import { ITopicRepository } from "../interfaces";
+import { ITopicCommandRepository, ITopicQueryRepository, ITopicRepository } from "../interfaces";
 import { Topic, TopicUpdateDTO } from "../model";
 import { TopicPersistent } from "./dto-sequelize";
 import { Op } from 'sequelize';
 export class TopicSequelizeRepository implements ITopicRepository {
+  constructor(
+    private readonly queryRepository: ITopicQueryRepository,
+    private readonly commandRepository: ITopicCommandRepository
+  ){}
+  async list(condition: { name?: string }, paging: PagingDTO): Promise<Paginated<Topic>> {
+    return this.queryRepository.list(condition, paging);
+  }
+
+  async findById(id: string): Promise<Topic | null> {
+    return this.queryRepository.findById(id);
+  }
+
+  async findByCond(condition: { name?: string }): Promise<Topic | null> {
+    return this.queryRepository.findByCond(condition);
+  }
+
+  async findByIds(ids: string[]): Promise<Topic[]> {
+    return this.queryRepository.findByIds(ids);
+  }
+
+  async create(topic: Topic): Promise<boolean> {
+    return this.commandRepository.create(topic);
+  }
+  async update(id: string, dto: TopicUpdateDTO): Promise<boolean> {
+    return this.commandRepository.update(id, dto);
+  }
+  async delete(id: string): Promise<boolean> {
+    return this.commandRepository.delete(id);
+  }
+
+  async increaseTopicPostCount(id: string): Promise<boolean> {
+    const topic = await TopicPersistent.findByPk(id);
+    if (!topic) return false;
+    topic.postCount = (topic.postCount || 0) + 1;
+    await topic.save();
+    return true;
+  }
+
+  async decreaseTopicPostCount(id: string): Promise<boolean> {
+    const topic = await TopicPersistent.findByPk(id);
+    if (!topic) return false;
+    topic.postCount = Math.max((topic.postCount || 0) - 1, 0); // <-- FIXED
+    await topic.save();
+    return true;
+  }
+
+  
+}
+
+export class TopicSequelizeQueryRepository implements ITopicQueryRepository{
   async list(condition: { name?: string }, paging: PagingDTO): Promise<Paginated<Topic>> {
     const where: any = {};
     if (condition.name) {
@@ -106,20 +156,6 @@ export class TopicSequelizeRepository implements ITopicRepository {
     };
   }
 
-  async create(topic: Topic): Promise<boolean> {
-    try {
-      await TopicPersistent.create(this._toPersistent(topic));
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async findByName(name: string): Promise<Topic | null> {
-    const topic = await TopicPersistent.findOne({ where: { name } });
-    return topic ? this._toModel(topic) : null;
-  }
-
   async findById(id: string): Promise<Topic | null> {
     const topic = await TopicPersistent.findByPk(id);
     return topic ? this._toModel(topic) : null;
@@ -138,33 +174,6 @@ export class TopicSequelizeRepository implements ITopicRepository {
     const topics = await TopicPersistent.findAll({ where: { id: ids } });
     return topics.map((topic) => this._toModel(topic));
   }
-
-  async update(id: string, dto: TopicUpdateDTO): Promise<boolean> {
-    const [affectedRows] = await TopicPersistent.update(dto, { where: { id } });
-    return affectedRows > 0;
-  }
-
-  async increaseTopicPostCount(id: string): Promise<boolean> {
-    const topic = await TopicPersistent.findByPk(id);
-    if (!topic) return false;
-    topic.postCount = (topic.postCount || 0) + 1;
-    await topic.save();
-    return true;
-  }
-
-  async decreaseTopicPostCount(id: string): Promise<boolean> {
-    const topic = await TopicPersistent.findByPk(id);
-    if (!topic) return false;
-    topic.postCount = Math.max((topic.postCount || 0) - 1, 0); // <-- FIXED
-    await topic.save();
-    return true;
-  }
-
-  async delete(id: string): Promise<boolean> {
-    const deletedCount = await TopicPersistent.destroy({ where: { id } });
-    return deletedCount > 0;
-  }
-
   // DATA MAPPER
   private _toModel(topic: TopicPersistent): Topic {
     const { created_at, updated_at, ...data } = topic.get({ plain: true });
@@ -180,8 +189,26 @@ export class TopicSequelizeRepository implements ITopicRepository {
       updatedAt: updated_at,
     };
   }
+}
 
-  // trả về any vì bên kia mình declare Topic của DB nó thiếu attribute, và chỉ có ở runtime
+export class TopicSequelizeCommandRepository implements ITopicCommandRepository{
+  async create(topic: Topic): Promise<boolean> {
+    try {
+      await TopicPersistent.create(this._toPersistent(topic));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  async update(id: string, dto: TopicUpdateDTO): Promise<boolean> {
+    const [affectedRows] = await TopicPersistent.update(dto, { where: { id } });
+    return affectedRows > 0;
+  }
+  async delete(id: string): Promise<boolean> {
+    const deletedCount = await TopicPersistent.destroy({ where: { id } });
+    return deletedCount > 0;
+  }
+
   private _toPersistent(topic: Topic): any {
     const { createdAt, updatedAt, ...data } = topic;
 

@@ -1,5 +1,5 @@
 import { Paginated, PagingDTO } from "@shared/model/paging";
-import { ITopicRepository } from "../interfaces";
+import { ITopicCommandRepository, ITopicQueryRepository, ITopicRepository } from "../interfaces";
 import { Topic, TopicUpdateDTO } from "../model";
 
 var data: Topic[] = [
@@ -38,6 +38,59 @@ var data: Topic[] = [
 ];
 
 export class TopicInMemoryRepository implements ITopicRepository {
+  constructor(
+    private readonly queryRepository: ITopicQueryRepository,
+    private readonly commandRepository: ITopicCommandRepository
+  ){}
+  list(condition: { name?: string }, paging: PagingDTO): Promise<Paginated<Topic>> {
+    return this.queryRepository.list(condition, paging);
+  }
+  
+  findByCond(condition: { name?: string }): Promise<Topic | null> {
+    return this.queryRepository.findByCond(condition);
+  }
+
+  findById(id: string): Promise<Topic | null> {
+    return this.queryRepository.findById(id);
+  }
+
+  findByIds(ids: string[]): Promise<Topic[]> {
+    return this.queryRepository.findByIds(ids);
+  }
+
+  create(topic: Topic): Promise<boolean> {
+    return this.commandRepository.create(topic);
+  }
+
+  update(id: string, dto: TopicUpdateDTO): Promise<boolean> {
+    return this.commandRepository.update(id, dto);
+  }
+  delete(id: string): Promise<boolean> {
+    return this.commandRepository.delete(id);
+  }
+
+  increaseTopicPostCount(id: string): Promise<boolean> {
+    const topic = data.find((topic) => topic.id === id);
+    if (!topic) {
+      return Promise.resolve(false);
+    }
+    topic.postCount += 1;
+    topic.updatedAt = new Date();
+    return Promise.resolve(true);
+  }
+
+  decreaseTopicPostCount(id: string): Promise<boolean> {
+    const topic = data.find((topic) => topic.id === id);
+    if (!topic) {
+      return Promise.resolve(false);
+    }
+    topic.postCount = Math.max(0, topic.postCount - 1);
+    topic.updatedAt = new Date();
+    return Promise.resolve(true);
+  }
+}
+
+export class TopicInMemoryQueryRepository implements ITopicQueryRepository {
   list(condition: { name?: string }, paging: PagingDTO): Promise<Paginated<Topic>> {
     let filtered = data;
     if (condition && condition.name && condition.name.length > 0) {
@@ -93,7 +146,9 @@ export class TopicInMemoryRepository implements ITopicRepository {
   findByIds(ids: string[]): Promise<Topic[]> {
     return Promise.resolve(data.filter((topic) => ids.includes(topic.id)));
   }
+}
 
+export class TopicInMemoryCommandRepository implements ITopicCommandRepository{
   create(topic: Topic): Promise<boolean> {
     data.push(topic);
     return Promise.resolve(true);
@@ -116,23 +171,4 @@ export class TopicInMemoryRepository implements ITopicRepository {
     return Promise.resolve(data.length < initialLength);
   }
 
-  increaseTopicPostCount(id: string): Promise<boolean> {
-    const topic = data.find((topic) => topic.id === id);
-    if (!topic) {
-      return Promise.resolve(false);
-    }
-    topic.postCount += 1;
-    topic.updatedAt = new Date();
-    return Promise.resolve(true);
-  }
-
-  decreaseTopicPostCount(id: string): Promise<boolean> {
-    const topic = data.find((topic) => topic.id === id);
-    if (!topic) {
-      return Promise.resolve(false);
-    }
-    topic.postCount = Math.max(0, topic.postCount - 1);
-    topic.updatedAt = new Date();
-    return Promise.resolve(true);
-  }
 }

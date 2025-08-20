@@ -1,7 +1,6 @@
 import { paginatedResponse, successResponse } from "@shared/ultils/reponses";
 import { UserUseCase } from "../service";
 import {Response, Request, NextFunction, Router} from "express";
-import { jwtProvider } from "@shared/components/jwt";
 import { ERR_NOT_FOUND, ERR_UNAUTHORIZED } from "@shared/ultils/error";
 import { Requester } from "@shared/interfaces";
 import { pagingDTOSchema } from "@shared/model/paging";
@@ -25,7 +24,7 @@ export class UserHTTPService {
       throw ERR_UNAUTHORIZED.withMessage("Access token is missing");
     }
 
-    const payload = await jwtProvider.verifyToken(token);
+    const payload = await this.usecase.authenProvider.verifyToken(token);
 
     if (!payload) {
       throw ERR_UNAUTHORIZED.withMessage("Invalid access token");
@@ -45,7 +44,7 @@ export class UserHTTPService {
       throw ERR_UNAUTHORIZED.withMessage("Access token is missing");
     }
 
-    const payload = await jwtProvider.verifyToken(token);
+    const payload = await this.usecase.authenProvider.verifyToken(token);
 
     if (!payload) {
       throw ERR_UNAUTHORIZED.withMessage("Invalid access token");

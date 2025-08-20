@@ -1,24 +1,73 @@
 import { prisma } from "@shared/components/prisma";
-import { ITopicRepository } from "../interfaces";
+import { ITopicCommandRepository, ITopicQueryRepository, ITopicRepository } from "../interfaces";
 import { Topic, TopicCondDTO, TopicUpdateDTO } from "../model";
 import { Paginated, PagingDTO } from "@shared/model/paging";
 
 export class TopicPrismaRepository implements ITopicRepository {
+  constructor(
+    private readonly queryRepository: ITopicQueryRepository,
+    private readonly commandRepository: ITopicCommandRepository
+  ){}
   async create(data: Topic): Promise<boolean> {
-    await prisma.topics.create({ data });
-    return true;
+    return this.commandRepository.create(data);
   }
 
   async update(id: string, data: TopicUpdateDTO): Promise<boolean> {
-    await prisma.topics.update({ where: { id }, data });
-    return true;
+    return this.commandRepository.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {
-    await prisma.topics.delete({ where: { id } });
+    return this.commandRepository.delete(id);
+  }
+
+  async list(condition: TopicCondDTO, paging: PagingDTO): Promise<Paginated<Topic>> {
+    return this.queryRepository.list(condition, paging);
+  }
+
+  async findById(id: string): Promise<Topic | null> {
+    return this.queryRepository.findById(id);
+  }
+
+  async findByCond(condition: TopicCondDTO): Promise<Topic | null> {
+    return this.queryRepository.findByCond(condition);
+  }
+
+  async findByIds(ids: string[]): Promise<Topic[]> {
+    return this.queryRepository.findByIds(ids);
+  }
+
+  async increaseTopicPostCount(id: string, field: string, step: number): Promise<boolean> {
+    await prisma.topics.update({
+      where: {
+        id
+      },
+      data: {
+        [field]: {
+          increment: step
+        }
+      }
+    })
     return true;
   }
 
+  async decreaseTopicPostCount(id: string, field: string, step: number): Promise<boolean> {
+    await prisma.topics.update({
+      where: {
+        id
+      },
+      data: {
+        [field]: {
+          decrement: step
+        }
+      }
+
+    })
+    return true;
+  };
+
+}
+
+export class TopicPrismaQueryRepository implements ITopicQueryRepository{
   async findById(id: string): Promise<Topic | null> {
     const topic = await prisma.topics.findUnique({ where: { id } });
     if (!topic) {
@@ -130,40 +179,26 @@ export class TopicPrismaRepository implements ITopicRepository {
     paging: updatedPaging,
     total
   };
-}
-
-
-  async increaseTopicPostCount(id: string, field: string, step: number): Promise<boolean> {
-    await prisma.topics.update({
-      where: {
-        id
-      },
-      data: {
-        [field]: {
-          increment: step
-        }
-      }
-    })
-    return true;
   }
-
-  async decreaseTopicPostCount(id: string, field: string, step: number): Promise<boolean> {
-    await prisma.topics.update({
-      where: {
-        id
-      },
-      data: {
-        [field]: {
-          decrement: step
-        }
-      }
-
-    })
-    return true;
-  };
-
   async findByIds(ids: string[]): Promise<Topic[]> {
     const topics = await prisma.topics.findMany({ where: { id: { in: ids } } });
     return topics as Topic[];
+  }
+}
+
+export class TopicPrismaCommandRepository implements ITopicCommandRepository{
+  async create(data: Topic): Promise<boolean> {
+    await prisma.topics.create({ data });
+    return true;
+  }
+
+  async update(id: string, data: TopicUpdateDTO): Promise<boolean> {
+    await prisma.topics.update({ where: { id }, data });
+    return true;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await prisma.topics.delete({ where: { id } });
+    return true;
   }
 }

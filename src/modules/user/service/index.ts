@@ -1,5 +1,4 @@
-import { jwtProvider } from "@shared/components/jwt";
-import { Requester, TokenPayload, UserRole } from "@shared/interfaces";
+import { ITokenProvider, Requester, TokenPayload, UserRole } from "@shared/interfaces";
 import { Paginated, PagingDTO } from "@shared/model/paging";
 
 import bcrypt from 'bcryptjs';
@@ -11,7 +10,7 @@ import { AppError, ERR_NOT_FOUND } from "@shared/ultils/error";
 import { ERROR_INVALID_TOKEN, ERROR_INVALID_USERNAME_AND_PASSWORD, ERROR_USER_INACTIVATED, ERROR_USERNAME_EXISTED } from "../model/error";
 
 export class UserUseCase implements IUserUseCase {
-  constructor(private readonly repository: IUserRepository) { }
+  constructor(private readonly repository: IUserRepository, readonly authenProvider: ITokenProvider) { }
 
   async profile(userId: string): Promise<User> {
     const user = await this.repository.findById(userId);
@@ -23,7 +22,7 @@ export class UserUseCase implements IUserUseCase {
   }
 
   async verifyToken(token: string): Promise<TokenPayload> {
-    const payload = await jwtProvider.verifyToken(token);
+    const payload = await this.authenProvider.verifyToken(token);
 
     if (!payload) {
       throw ERROR_INVALID_TOKEN;
@@ -62,7 +61,7 @@ export class UserUseCase implements IUserUseCase {
 
     // 3. Return token
     const role = user.role;
-    const token = jwtProvider.generateToken({ sub: user.id, role });
+    const token = this.authenProvider.generateToken({ sub: user.id, role });
     return token;
   }
 
