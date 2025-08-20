@@ -4,7 +4,8 @@ import { init } from "./repository/dto-sequelize";
 import { TopicSequelizeRepository } from "./repository";
 import { TopicUsecase } from "./service";
 import { sequelize } from "../../shared/components/sequelize";
-export const setupTopicModule = () => {
+import { ServiceContext } from "@shared/interfaces";
+export const setupTopicModule = (sctx: ServiceContext) => {
   // choose repository type:
   // const queryRepo = new TopicInMemoryQueryRepository();
   // const commandRepo = new TopicInMemoryCommandRepository();
@@ -18,7 +19,7 @@ export const setupTopicModule = () => {
   const sequelizeRepo = new TopicSequelizeRepository(queryRepo, commandRepo);
   const usecase = new TopicUsecase(sequelizeRepo);
   const httpService = new TopicHttpService(usecase);
-  const router = httpService.getRoutes();
+  const router = httpService.getRoutes(sctx.mdlFactory);
 
   return router;
 }

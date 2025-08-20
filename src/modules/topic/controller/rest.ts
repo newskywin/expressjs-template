@@ -3,6 +3,7 @@ import { TopicUsecase } from "../service";
 import { NextFunction, Request, Response, Router} from "express";
 import { paginatedResponse, successResponse } from "@shared/ultils/reponses";
 import { ERR_NOT_FOUND } from "@shared/ultils/error";
+import { MdlFactory, UserRole } from "@shared/interfaces";
 
 export class TopicHttpService {
   constructor(
@@ -46,15 +47,19 @@ export class TopicHttpService {
     res.status(200).json({ data });
   }
 
-  getRoutes(): Router {
+  getRoutes(mdlFactory: MdlFactory): Router {
     const router = Router();
 
-    router.post('/topics', this.createTopicAPI.bind(this));
-    router.patch('/topics/:id', this.updateTopicAPI.bind(this));
-    router.delete('/topics/:id', this.deleteTopicAPI.bind(this));
+    router.post('/topics',mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]),this.createTopicAPI.bind(this));
+    router.patch('/topics/:id', mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]),this.updateTopicAPI.bind(this));
+    router.delete('/topics/:id',mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]), this.deleteTopicAPI.bind(this));
     router.get("/topics/:id", this.getTopicByIdAPI.bind(this));
     router.get('/topics', this.listTopicsAPI.bind(this));
 
+
+    // RPC APIs
+    router.post('/rpc/topics/list', this.listTopicsAPI.bind(this));
+    router.get('/rpc/topics/:id', this.getTopicByIdAPI.bind(this));
     return router;
   }
 }

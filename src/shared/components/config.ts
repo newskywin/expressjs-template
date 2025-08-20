@@ -10,4 +10,7 @@ export const appConfig = {
     dsn: process.env.DATABASE_URL || "",
   },
   jwtSecret: process.env.JWT_SECRET_KEY || 'NewSkyWin',
+  rpc: {
+    introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
+  }
 };

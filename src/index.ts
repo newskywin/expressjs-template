@@ -7,9 +7,19 @@ import Logger from "@shared/ultils/logger";
 import { setupTopicModule } from "@modules/topic/module";
 import { checkConnection } from "@shared/components/prisma";
 import { setupUserModule } from "@modules/user/module";
+import { TokenIntrospectRPCClient } from "@shared/rpc/verify-token";
+import { setupMiddlewares } from "@shared/middleware";
+import { ServiceContext } from "@shared/interfaces";
 async function bootServer(port: number) {
 
   try {
+
+    const introspector = new TokenIntrospectRPCClient(appConfig.rpc.introspectUrl);
+    const MdlFactory = setupMiddlewares(introspector);
+
+    const serviceCtx: ServiceContext = {
+      mdlFactory: MdlFactory,
+    };
 
     // error handling
     await checkConnection();
@@ -20,7 +30,7 @@ async function bootServer(port: number) {
 
     // const server = createServer(app);
 
-    const topicModule = setupTopicModule();
+    const topicModule = setupTopicModule(serviceCtx);
     const userModule = setupUserModule();
     app.use("/v1", userModule);
     app.use('/v1', topicModule);
