@@ -47,6 +47,13 @@ export class TopicHttpService {
     res.status(200).json({ data });
   }
 
+  async listTopicByIdsAPI(req: Request, res: Response) {
+    const { ids } = req.body;
+    const data = await this.usecase.listTopicByIds(ids);
+
+    res.status(200).json({ data });
+  }
+
   getRoutes(mdlFactory: MdlFactory): Router {
     const router = Router();
 
@@ -58,7 +65,7 @@ export class TopicHttpService {
 
 
     // RPC APIs
-    router.post('/rpc/topics/list', this.listTopicsAPI.bind(this));
+    router.post('/rpc/topics/list-by-ids', this.listTopicByIdsAPI.bind(this));
     router.get('/rpc/topics/:id', this.getTopicByIdAPI.bind(this));
     return router;
   }

@@ -12,5 +12,10 @@ export const appConfig = {
   jwtSecret: process.env.JWT_SECRET_KEY || 'NewSkyWin',
   rpc: {
     introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
-  }
+    topicServiceURL: process.env.TOPIC_SERVICE_URL || `http://localhost:${port}/v1`,
+    postLikeServiceURL: process.env.POST_LIKE_SERVICE_URL || `http://localhost:${port}/v1`,
+    postSavedServiceURL: process.env.POST_SAVED_SERVICE_URL || `http://localhost:${port}/v1`,
+    userServiceURL: process.env.USER_SERVICE_URL || `http://localhost:${port}/v1`,
+  },
+  
 };

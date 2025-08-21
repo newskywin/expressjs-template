@@ -6,7 +6,7 @@ var data: Topic[] = [
   {
     id: "0195655a-b870-729b-877f-840a608ca981",
     name: "Javascript",
-    color: "yellow",
+    color: "#FFFF00",
     createdAt: new Date(),
     updatedAt: new Date(),
     postCount: 0,
@@ -14,7 +14,7 @@ var data: Topic[] = [
   {
     id: "0198ace5-ddc5-753a-915f-6547fe4eaff9",
     name: "Golang",
-    color: "Sky",
+    color: "#87CEEB",
     createdAt: new Date(),
     updatedAt: new Date(),
     postCount: 0,
@@ -22,7 +22,7 @@ var data: Topic[] = [
   {
     id: "0198acff-cce6-7b80-a7cf-a29c27afc342",
     name: "Python",
-    color: "Blue",
+    color: "#0000FF",
     createdAt: new Date(),
     updatedAt: new Date(),
     postCount: 0,
@@ -30,7 +30,7 @@ var data: Topic[] = [
   {
     id: "0198ad01-bf97-7407-bdbb-61f38e962685",
     name: "Rust",
-    color: "Gach",
+    color: "#B7410E",
     createdAt: new Date(),
     updatedAt: new Date(),
     postCount: 0,

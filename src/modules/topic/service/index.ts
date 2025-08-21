@@ -66,4 +66,8 @@ export class TopicUsecase implements ITopicUsecase {
     }
     return topic;
   }
+
+  async listTopicByIds(ids: string[]): Promise<Topic[]> {
+    return await this.topicRepo.findByIds(ids);
+  }
 }

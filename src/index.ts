@@ -10,6 +10,7 @@ import { setupUserModule } from "@modules/user/module";
 import { TokenIntrospectRPCClient } from "@shared/rpc/verify-token";
 import { setupMiddlewares } from "@shared/middleware";
 import { ServiceContext } from "@shared/interfaces";
+import { setupPostModule } from "@modules/post/module";
 async function bootServer(port: number) {
 
   try {
@@ -31,9 +32,11 @@ async function bootServer(port: number) {
     // const server = createServer(app);
 
     const topicModule = setupTopicModule(serviceCtx);
+    const postModule = setupPostModule(serviceCtx);
     const userModule = setupUserModule();
     app.use("/v1", userModule);
     app.use('/v1', topicModule);
+    app.use('/v1', postModule);
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       responseErr(err, res);

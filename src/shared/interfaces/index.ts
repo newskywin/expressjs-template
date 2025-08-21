@@ -1,3 +1,4 @@
+import { PublicUser } from "@shared/model/public-user";
 import { Handler } from "express";
 
 export enum UserRole {
@@ -36,3 +37,8 @@ export interface MdlFactory {
 export type ServiceContext = {
   mdlFactory: MdlFactory;
 };
+
+export interface IAuthorRpc {
+  findById(id: string): Promise<PublicUser | null>;
+  findByIds(ids: Array<string>): Promise<Array<PublicUser>>;
+}

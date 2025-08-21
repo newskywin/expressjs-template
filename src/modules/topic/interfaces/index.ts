@@ -12,6 +12,7 @@ export interface ITopicUsecase {
   deleteTopic(id: string): Promise<boolean>;
   listTopic(condition: TopicCondDTO, paging: PagingDTO): Promise<Paginated<Topic>>;
   getTopicById(id: string): Promise<Topic | null>;
+  listTopicByIds(ids: string[]): Promise<Topic[]>;
 }
 export interface ITopicCommandRepository {
   create(data: Topic): Promise<boolean>;
