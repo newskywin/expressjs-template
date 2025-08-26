@@ -17,5 +17,11 @@ export const appConfig = {
     postSavedServiceURL: process.env.POST_SAVED_SERVICE_URL || `http://localhost:${port}/v1`,
     userServiceURL: process.env.USER_SERVICE_URL || `http://localhost:${port}/v1`,
   },
-  
+  envName: process.env.NODE_ENV,
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+    url: process.env.REDIS_URL
+  },
 };

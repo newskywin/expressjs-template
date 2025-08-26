@@ -4,22 +4,28 @@ import { NextFunction, Request, Response } from 'express';
 import { appConfig } from "@shared/components/config";
 import { responseErr } from "@shared/ultils/error";
 import Logger from "@shared/ultils/logger";
-import { setupTopicModule } from "@modules/topic/module";
+import { setupTopicModule, setupTopicRedisConsumer } from "@modules/topic/module";
 import { checkConnection } from "@shared/components/prisma";
 import { setupUserModule } from "@modules/user/module";
 import { TokenIntrospectRPCClient } from "@shared/rpc/verify-token";
 import { setupMiddlewares } from "@shared/middleware";
 import { ServiceContext } from "@shared/interfaces";
 import { setupPostModule } from "@modules/post/module";
+import { RedisClient } from "@shared/components/redis";
+import { createServer } from "http";
 async function bootServer(port: number) {
 
   try {
+
+    const connectionUrl = appConfig.redis.url as string;
+    await RedisClient.init(connectionUrl);
 
     const introspector = new TokenIntrospectRPCClient(appConfig.rpc.introspectUrl);
     const MdlFactory = setupMiddlewares(introspector);
 
     const serviceCtx: ServiceContext = {
       mdlFactory: MdlFactory,
+      eventPublisher: RedisClient.getInstance(),
     };
 
     // error handling
@@ -29,7 +35,7 @@ async function bootServer(port: number) {
       return next();
     });
 
-    // const server = createServer(app);
+    
 
     const topicModule = setupTopicModule(serviceCtx);
     const postModule = setupPostModule(serviceCtx);
@@ -43,7 +49,11 @@ async function bootServer(port: number) {
       return next();
     });
     
-    app.listen(port, () => {
+    // setup redis consumer
+    setupTopicRedisConsumer(serviceCtx);
+
+    const server = createServer(app);
+    server.listen(port, () => {
       Logger.success(`Server is running on port ${port}`);
     });
   } catch (e) {

@@ -1,15 +1,17 @@
-import { IAuthorRpc, Requester } from "@shared/interfaces";
+import { IAuthorRpc, IEventPublisher, Requester } from "@shared/interfaces";
 import { IPostRepository, IPostUseCase, ITopicQueryRPC } from "../interfaces";
 import { CreatePostDTO, createPostDTOSchema, Post, PostCondDTO, PostType, UpdatePostDTO, updatePostDTOSchema } from "../model";
 import { ERROR_AUTHOR_NOT_FOUND, ERROR_POST_NOT_FOUND, ERROR_TOPIC_NOT_FOUND } from "../model/error";
 import { v7 } from "uuid";
 import { Paginated, PagingDTO } from "@shared/model/paging";
+import { PostCreatedEvent, PostDeletedEvent } from "@shared/event/topic.evt";
 
 export class PostUsecase implements IPostUseCase {
   constructor(
     private readonly repository: IPostRepository,
     private readonly topicRPC: ITopicQueryRPC,
-    private readonly userRPC: IAuthorRpc
+    private readonly userRPC: IAuthorRpc,
+    private readonly eventPublisher: IEventPublisher,
   ) {}
 
   async createPost(dto: CreatePostDTO): Promise<string> {
@@ -44,7 +46,12 @@ export class PostUsecase implements IPostUseCase {
     await this.repository.insert(post);
 
     // publish event
-
+    this.eventPublisher.publish(
+      PostCreatedEvent.create(
+        { userId: post.authorId, topicId: post.topicId },
+        newId
+      )
+    );
     return newId;
   }
 
@@ -90,7 +97,12 @@ export class PostUsecase implements IPostUseCase {
     const result = await this.repository.delete(id);
 
     // publish event
-
+    this.eventPublisher.publish(
+      PostDeletedEvent.create(
+        { userId: postExist.authorId, topicId: postExist.topicId },
+        postExist.id
+      )
+    );
     return result;
   }
 

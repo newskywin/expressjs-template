@@ -5,6 +5,7 @@ import { TopicSequelizeRepository } from "./repository";
 import { TopicUsecase } from "./service";
 import { sequelize } from "@shared/components/sequelize";
 import { ServiceContext } from "@shared/interfaces";
+import { RedisTopicConsumer } from "./controller/redis-consumer";
 export const setupTopicModule = (sctx: ServiceContext) => {
   // CHOOSE REPOSITORY TYPE: one of them
   // use in-memory-repo
@@ -29,3 +30,12 @@ export const setupTopicModule = (sctx: ServiceContext) => {
 
   return router;
 }
+
+export const setupTopicRedisConsumer = (sctx: ServiceContext) => {
+  // we can choose orther Type of repo (in-memory, sequelize, prisma)
+  const queryRepo = new TopicPrismaQueryRepository();
+  const commandRepo = new TopicPrismaCommandRepository();
+  const repository = new TopicPrismaRepository(queryRepo, commandRepo);
+  const redisConsumer = new RedisTopicConsumer(repository);
+  redisConsumer.subcriber();
+};

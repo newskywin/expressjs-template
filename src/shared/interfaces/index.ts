@@ -1,3 +1,4 @@
+import { AppEvent } from "@shared/model/event";
 import { PublicUser } from "@shared/model/public-user";
 import { Handler } from "express";
 
@@ -36,9 +37,16 @@ export interface MdlFactory {
 
 export type ServiceContext = {
   mdlFactory: MdlFactory;
+  eventPublisher: IEventPublisher;
 };
 
 export interface IAuthorRpc {
   findById(id: string): Promise<PublicUser | null>;
   findByIds(ids: Array<string>): Promise<Array<PublicUser>>;
+}
+
+export type EventHandler = (msg: string) => void;
+
+export interface IEventPublisher {
+  publish<T>(event: AppEvent<T>): Promise<void>;
 }

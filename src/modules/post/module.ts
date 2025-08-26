@@ -31,7 +31,7 @@ export const setupPostModule = (sctx: ServiceContext) => {
   const topicRPC = new TopicQueryRPC(appConfig.rpc.topicServiceURL);
   const postLikeRPC = new PostLikedRPC(appConfig.rpc.postLikeServiceURL);
   const postSavedRPC = new PostSavedRPC(appConfig.rpc.postSavedServiceURL);
-  const usecase = new PostUsecase(repository, topicRPC, authRPC);
+  const usecase = new PostUsecase(repository, topicRPC, authRPC, sctx.eventPublisher);
   const httpService = new PostHttpService(
     usecase,
     authRPC,
