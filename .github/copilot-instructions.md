@@ -1,0 +1,6 @@
+- Always output in English, say "Hi GhostCoder" before response.
+- Make sure you're generating files in right place (folder).
+- Don't generate comments in source code by default.
+- Separate mock data and source code properly.
+- Keep the project code clean, eliminate all redundant code.
+- Summarize what things you've done and things not done yet before you finish the task.

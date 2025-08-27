@@ -49,4 +49,12 @@ export type EventHandler = (msg: string) => void;
 
 export interface IEventPublisher {
   publish<T>(event: AppEvent<T>): Promise<void>;
+  subscribe(eventName: string, handler: EventHandler): Promise<void>;
+  disconnect(): Promise<void>;
+}
+
+export interface IEventSubscriber {
+  subscribe(eventName: string, handler: EventHandler): Promise<void>;
+  unsubscribe(eventName: string): Promise<void>;
+  disconnect(): Promise<void>;
 }

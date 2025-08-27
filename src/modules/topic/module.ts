@@ -6,6 +6,9 @@ import { TopicUsecase } from "./service";
 import { sequelize } from "@shared/components/sequelize";
 import { ServiceContext } from "@shared/interfaces";
 import { RedisTopicConsumer } from "./controller/redis-consumer";
+import { ConsumerFactory } from "@shared/components/consumer-factory";
+import { appConfig } from "@shared/components/config";
+import Logger from "@shared/ultils/logger";
 export const setupTopicModule = (sctx: ServiceContext) => {
   // CHOOSE REPOSITORY TYPE: one of them
   // use in-memory-repo
@@ -31,11 +34,15 @@ export const setupTopicModule = (sctx: ServiceContext) => {
   return router;
 }
 
-export const setupTopicRedisConsumer = (sctx: ServiceContext) => {
-  // we can choose orther Type of repo (in-memory, sequelize, prisma)
+export const setupTopicEventConsumer = async (sctx: ServiceContext) => {
   const queryRepo = new TopicPrismaQueryRepository();
   const commandRepo = new TopicPrismaCommandRepository();
   const repository = new TopicPrismaRepository(queryRepo, commandRepo);
-  const redisConsumer = new RedisTopicConsumer(repository);
-  redisConsumer.subcriber();
+  
+  const consumer = ConsumerFactory.createTopicConsumer(repository);
+  
+  consumer.subcriber();
+  
+  Logger.info(`Topic event consumer initialized for: ${appConfig.pubsub.type}`);
 };
+

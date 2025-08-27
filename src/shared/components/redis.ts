@@ -50,14 +50,14 @@ export class RedisClient implements IEventPublisher {
     }
   }
 
-  public async subscribe(topic: string, fn: EventHandler): Promise<void> {
+  public async subscribe(eventName: string, handler: EventHandler): Promise<void> {
     try {
       const subscriber = this.redisClient.duplicate();
       await subscriber.connect();
-      await subscriber.subscribe(topic, fn);
+      await subscriber.subscribe(eventName, handler);
 
-      const subs = this.subscriberMap[topic] || [];
-      this.subscriberMap[topic] = [...subs, subscriber];
+      const subs = this.subscriberMap[eventName] || [];
+      this.subscriberMap[eventName] = [...subs, subscriber];
     } catch (error) {
       appConfig.envName !== "production" && console.error(error);
       Logger.error((error as Error).message);

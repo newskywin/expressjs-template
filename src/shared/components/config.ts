@@ -18,10 +18,18 @@ export const appConfig = {
     userServiceURL: process.env.USER_SERVICE_URL || `http://localhost:${port}/v1`,
   },
   envName: process.env.NODE_ENV,
+  pubsub: {
+    type: process.env.PUBSUB_TYPE || 'redis',
+  },
   redis: {
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT,
     password: process.env.REDIS_PASSWORD,
     url: process.env.REDIS_URL
+  },
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+    exchange: process.env.RABBITMQ_EXCHANGE || 'events',
+    exchangeType: process.env.RABBITMQ_EXCHANGE_TYPE || 'topic',
   },
 };

@@ -4,28 +4,27 @@ import { NextFunction, Request, Response } from 'express';
 import { appConfig } from "@shared/components/config";
 import { responseErr } from "@shared/ultils/error";
 import Logger from "@shared/ultils/logger";
-import { setupTopicModule, setupTopicRedisConsumer } from "@modules/topic/module";
+import { setupTopicModule, setupTopicEventConsumer } from "@modules/topic/module";
 import { checkConnection } from "@shared/components/prisma";
 import { setupUserModule } from "@modules/user/module";
 import { TokenIntrospectRPCClient } from "@shared/rpc/verify-token";
 import { setupMiddlewares } from "@shared/middleware";
 import { ServiceContext } from "@shared/interfaces";
 import { setupPostModule } from "@modules/post/module";
-import { RedisClient } from "@shared/components/redis";
+import { EventPublisherFactory } from "@shared/components/event-publisher-factory";
 import { createServer } from "http";
 async function bootServer(port: number) {
 
   try {
 
-    const connectionUrl = appConfig.redis.url as string;
-    await RedisClient.init(connectionUrl);
+    const eventPublisher = await EventPublisherFactory.createPublisher();
 
     const introspector = new TokenIntrospectRPCClient(appConfig.rpc.introspectUrl);
     const MdlFactory = setupMiddlewares(introspector);
 
     const serviceCtx: ServiceContext = {
       mdlFactory: MdlFactory,
-      eventPublisher: RedisClient.getInstance(),
+      eventPublisher: eventPublisher,
     };
 
     // error handling
@@ -49,8 +48,7 @@ async function bootServer(port: number) {
       return next();
     });
     
-    // setup redis consumer
-    setupTopicRedisConsumer(serviceCtx);
+    await setupTopicEventConsumer(serviceCtx);
 
     const server = createServer(app);
     server.listen(port, () => {
