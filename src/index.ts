@@ -13,10 +13,11 @@ import { ServiceContext } from "@shared/interfaces";
 import { setupPostModule } from "@modules/post/module";
 import { EventPublisherFactory } from "@shared/components/event-publisher-factory";
 import { createServer } from "http";
+import { RedisClient } from "@shared/components/redis";
 async function bootServer(port: number) {
 
   try {
-
+    await RedisClient.init(appConfig.redis.url as string);
     const eventPublisher = await EventPublisherFactory.createPublisher();
 
     const introspector = new TokenIntrospectRPCClient(appConfig.rpc.introspectUrl);

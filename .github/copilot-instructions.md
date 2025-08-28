@@ -4,3 +4,6 @@
 - Separate mock data and source code properly.
 - Keep the project code clean, eliminate all redundant code.
 - Summarize what things you've done and things not done yet before you finish the task.
+
+
+- Please use pnpm for this project

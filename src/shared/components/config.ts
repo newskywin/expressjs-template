@@ -1,3 +1,4 @@
+import { CacheConfig } from '@shared/interfaces';
 import dotenv from 'dotenv';
 dotenv.config({
 });
@@ -31,5 +32,16 @@ export const appConfig = {
     url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
     exchange: process.env.RABBITMQ_EXCHANGE || 'events',
     exchangeType: process.env.RABBITMQ_EXCHANGE_TYPE || 'topic',
+  },
+};
+
+export const cacheConfig: CacheConfig = {
+  enabled: process.env.CACHE_ENABLED === 'true' || true,
+  prefix: process.env.CACHE_PREFIX || 'app:v1:',
+  ttl: {
+    entity: parseInt(process.env.REDIS_CACHE_TTL_ENTITY || '3600'),
+    list: parseInt(process.env.REDIS_CACHE_TTL_LIST || '900'),
+    bulk: parseInt(process.env.REDIS_CACHE_TTL_BULK || '1800'),
+    search: parseInt(process.env.REDIS_CACHE_TTL_SEARCH || '600'),
   },
 };

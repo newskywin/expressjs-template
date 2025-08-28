@@ -24,7 +24,7 @@ export class RedisClient implements IEventPublisher {
 
   public static getInstance(): RedisClient {
     if (!this.instance) {
-      throw new Error("RedisClient instance not initialized");
+      throw new Error("RedisClient instance not initialized - please check it");
     }
 
     return this.instance;

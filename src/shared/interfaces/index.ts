@@ -2,6 +2,8 @@ import { AppEvent } from "@shared/model/event";
 import { PublicUser } from "@shared/model/public-user";
 import { Handler } from "express";
 
+export * from "./cache";
+
 export enum UserRole {
   USER = "user",
   ADMIN = "admin",

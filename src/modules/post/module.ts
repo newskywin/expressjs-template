@@ -6,26 +6,33 @@ import { PostUsecase } from "./service";
 import { PostHttpService } from "./controller";
 import { PostPrismaCommandRepository, PostPrismaQueryRepository, PostPrismaRepository } from "./repository";
 import { PostSequelizeCommandRepository, PostSequelizeQueryRepository, PostSequelizeRepository } from "./repository";
+import { CachedPostRepository } from "./repository/cached-repo";
+import { RedisCacheService } from "@shared/components/cache";
 import { init } from "./repository/dto-sequelize";
 import { sequelize } from "@shared/components/sequelize";
 
 export const setupPostModule = (sctx: ServiceContext) => {
+  const cacheService = new RedisCacheService();
+  
   // CHOOSE REPOSITORY TYPE: one of them
   // // use in-memory-repo
   // const queryRepo = new PostInMemoryQueryRepository();
   // const commandRepo = new PostInMemoryCommandRepository();
-  // const repository = new PostInMemoryRepository(queryRepo, commandRepo);
+  // const baseRepository = new PostInMemoryRepository(queryRepo, commandRepo);
 
   // // use prisma-repo
   const queryRepo = new PostPrismaQueryRepository();
   const commandRepo = new PostPrismaCommandRepository();
-  const repository = new PostPrismaRepository(queryRepo, commandRepo);
+  const baseRepository = new PostPrismaRepository(queryRepo, commandRepo);
 
   // use sequelize-repo
   // init(sequelize);
   // const queryRepo = new PostSequelizeQueryRepository();
   // const commandRepo = new PostSequelizeCommandRepository();
-  // const repository = new PostSequelizeRepository(queryRepo, commandRepo);
+  // const baseRepository = new PostSequelizeRepository(queryRepo, commandRepo);
+
+  // Create cached repository wrapper
+  const repository = new CachedPostRepository(queryRepo, commandRepo, cacheService);
 
   const authRPC = new UserRPCClient(appConfig.rpc.userServiceURL);
   const topicRPC = new TopicQueryRPC(appConfig.rpc.topicServiceURL);

@@ -14,7 +14,6 @@ export class EventPublisherFactory {
     
     switch (pubsubType) {
       case 'redis':
-        await RedisClient.init(appConfig.redis.url as string);
         return RedisClient.getInstance();
         
       case 'rabbitmq':
