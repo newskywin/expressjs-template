@@ -5,7 +5,7 @@ import {
   PostDeletedEvent 
 } from "@shared/event/topic.evt";
 import { ITopicRepository } from "../interfaces";
-import { RabbitMQClient } from "@shared/components/rabbitmq";
+import { RabbitMQPubSub } from "@shared/components/rabbitmq-pubsub";
 import Logger from "@shared/ultils/logger";
 
 export class RabbitMQTopicConsumer {
@@ -30,7 +30,7 @@ export class RabbitMQTopicConsumer {
   }
 
   subcriber() {
-    const rabbitmqClient = RabbitMQClient.getInstance();
+    const rabbitmqClient = RabbitMQPubSub.getInstance();
     
     rabbitmqClient.subscribe(EvtPostCreated, (msg: string) => {
       try {

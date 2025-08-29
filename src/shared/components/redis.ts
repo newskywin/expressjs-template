@@ -1,14 +1,10 @@
-import { EventHandler, IEventPublisher } from "@shared/interfaces";
-import { AppEvent } from "@shared/model/event";
 import Logger from "@shared/ultils/logger";
 import { createClient, RedisClientType } from "redis";
-import { appConfig } from "./config";
 
-export class RedisClient implements IEventPublisher {
+export class RedisClient {
   private static instance: RedisClient;
 
   redisClient: RedisClientType;
-  private subscriberMap: Record<string, RedisClientType[]> = {};
 
   private constructor(connectionUrl: string) {
     const url = connectionUrl;
@@ -39,34 +35,12 @@ export class RedisClient implements IEventPublisher {
     }
   }
 
-  public async publish<T>(event: AppEvent<T>): Promise<void> {
-    try {
-      await this.redisClient.publish(
-        event.eventName,
-        JSON.stringify(event.plainObject())
-      );
-    } catch (err) {
-      Logger.error((err as Error).message);
-    }
-  }
-
-  public async subscribe(eventName: string, handler: EventHandler): Promise<void> {
-    try {
-      const subscriber = this.redisClient.duplicate();
-      await subscriber.connect();
-      await subscriber.subscribe(eventName, handler);
-
-      const subs = this.subscriberMap[eventName] || [];
-      this.subscriberMap[eventName] = [...subs, subscriber];
-    } catch (error) {
-      appConfig.envName !== "production" && console.error(error);
-      Logger.error((error as Error).message);
-    }
+  public getClient(): RedisClientType {
+    return this.redisClient;
   }
 
   public async disconnect(): Promise<void> {
     await this.redisClient.disconnect();
-
     Logger.info("Disconnected redis server");
   }
 }

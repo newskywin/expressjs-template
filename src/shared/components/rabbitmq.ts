@@ -1,14 +1,11 @@
-import { IEventPublisher, EventHandler } from "@shared/interfaces";
-import { AppEvent } from "@shared/model/event";
 import Logger from "@shared/ultils/logger";
 import * as amqp from "amqplib";
 import { appConfig } from "./config";
 
-export class RabbitMQClient implements IEventPublisher {
+export class RabbitMQClient {
   private static instance: RabbitMQClient;
   private connection: any = null;
   private publishChannel: any = null;
-  private subscribeChannels: Map<string, any> = new Map();
   private exchangeName: string;
   private exchangeType: string;
 
@@ -53,72 +50,24 @@ export class RabbitMQClient implements IEventPublisher {
     }
   }
 
-  public async publish<T>(event: AppEvent<T>): Promise<void> {
-    try {
-      if (!this.publishChannel) {
-        throw new Error("RabbitMQ publish channel not initialized");
-      }
-
-      const routingKey = event.eventName;
-      const message = JSON.stringify(event.plainObject());
-      
-      await this.publishChannel.publish(
-        this.exchangeName,
-        routingKey,
-        Buffer.from(message),
-        {
-          persistent: true,
-          timestamp: Date.now(),
-          messageId: event.id,
-        }
-      );
-      
-      Logger.info(`Published event: ${event.eventName}`);
-    } catch (err) {
-      Logger.error(`RabbitMQ publish error: ${(err as Error).message}`);
-      throw err;
-    }
+  public getConnection(): any {
+    return this.connection;
   }
 
-  public async subscribe(eventName: string, handler: EventHandler): Promise<void> {
-    try {
-      if (!this.connection) {
-        throw new Error("RabbitMQ connection not initialized");
-      }
+  public getPublishChannel(): any {
+    return this.publishChannel;
+  }
 
-      const channel = await this.connection.createChannel();
-      await channel.assertExchange(this.exchangeName, this.exchangeType, { durable: true });
-      
-      const queueResult = await channel.assertQueue('', { 
-        exclusive: true,
-        autoDelete: true 
-      });
-      
-      await channel.bindQueue(queueResult.queue, this.exchangeName, eventName);
-      
-      await channel.consume(queueResult.queue, (msg: any) => {
-        if (msg) {
-          const content = msg.content.toString();
-          handler(content);
-          channel.ack(msg);
-        }
-      });
-      
-      this.subscribeChannels.set(eventName, channel);
-      Logger.info(`Subscribed to event: ${eventName}`);
-    } catch (error) {
-      Logger.error(`RabbitMQ subscribe error: ${(error as Error).message}`);
-      throw error;
-    }
+  public getExchangeName(): string {
+    return this.exchangeName;
+  }
+
+  public getExchangeType(): string {
+    return this.exchangeType;
   }
 
   public async disconnect(): Promise<void> {
     try {
-      for (const [eventName, channel] of this.subscribeChannels) {
-        await channel.close();
-      }
-      this.subscribeChannels.clear();
-
       if (this.publishChannel) {
         await this.publishChannel.close();
       }
