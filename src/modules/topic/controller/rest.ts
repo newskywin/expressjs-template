@@ -4,6 +4,7 @@ import { NextFunction, Request, Response, Router} from "express";
 import { paginatedResponse, successResponse } from "@shared/ultils/reponses";
 import { ERR_NOT_FOUND } from "@shared/ultils/error";
 import { MdlFactory, UserRole } from "@shared/interfaces";
+import { Permission } from "@shared/model/permissions";
 
 export class TopicHttpService {
   constructor(
@@ -57,16 +58,33 @@ export class TopicHttpService {
   getRoutes(mdlFactory: MdlFactory): Router {
     const router = Router();
 
-    router.post('/topics',mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]),this.createTopicAPI.bind(this));
-    router.patch('/topics/:id', mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]),this.updateTopicAPI.bind(this));
-    router.delete('/topics/:id',mdlFactory.auth, mdlFactory.allowRoles([UserRole.ADMIN]), this.deleteTopicAPI.bind(this));
-    router.get("/topics/:id", this.getTopicByIdAPI.bind(this));
+    // Public read access
     router.get('/topics', this.listTopicsAPI.bind(this));
+    router.get("/topics/:id", this.getTopicByIdAPI.bind(this));
 
+    // Admin-only operations (using new permission system)
+    router.post('/topics', 
+      mdlFactory.auth, 
+      mdlFactory.requirePermission(Permission.TOPIC_WRITE), 
+      this.createTopicAPI.bind(this)
+    );
+    
+    router.patch('/topics/:id', 
+      mdlFactory.auth, 
+      mdlFactory.requirePermission(Permission.TOPIC_WRITE), 
+      this.updateTopicAPI.bind(this)
+    );
+    
+    router.delete('/topics/:id', 
+      mdlFactory.auth, 
+      mdlFactory.requirePermission(Permission.TOPIC_DELETE), 
+      this.deleteTopicAPI.bind(this)
+    );
 
-    // RPC APIs
+    // RPC APIs (internal use)
     router.post('/rpc/topics/list-by-ids', this.listTopicByIdsAPI.bind(this));
     router.get('/rpc/topics/:id', this.getTopicByIdAPI.bind(this));
+    
     return router;
   }
 }

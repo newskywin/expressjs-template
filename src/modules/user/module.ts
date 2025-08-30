@@ -4,8 +4,9 @@ import { UserHTTPService } from "./controller";
 import { UserPrismaCommandRepository, UserPrismaQueryRepository, UserPrismaRepository } from "./repository/prisma-repo";
 import { UserUseCase } from "./service";
 import { appConfig } from "@shared/components/config";
+import { MdlFactory } from "@shared/interfaces";
 
-export const setupUserModule = () => {
+export const setupUserModule = (mdlFactory?: MdlFactory) => {
   const queryRepository = new UserPrismaQueryRepository();
   const commandRepository = new UserPrismaCommandRepository();
 
@@ -21,7 +22,7 @@ export const setupUserModule = () => {
     blacklistService
   );
   const useCase = new UserUseCase(repository, jwtProvider);
-  const httpService = new UserHTTPService(useCase);
+  const httpService = new UserHTTPService(useCase, mdlFactory);
 
   const router = httpService.getRoutes();
   return router;

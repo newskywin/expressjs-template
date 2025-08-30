@@ -2,6 +2,7 @@ import { ITokenIntrospect, MdlFactory } from "@shared/interfaces";
 import { authMiddleware } from "./auth";
 import { NextFunction, Request, Response } from "express";
 import { allowRoles } from "./allow-roles";
+import { requirePermission, requireAnyPermission, requireAllPermissions } from "./require-permissions";
 export const setupMiddlewares = (
   introspector: ITokenIntrospect
 ): MdlFactory => {
@@ -20,5 +21,8 @@ export const setupMiddlewares = (
     auth,
     optAuth,
     allowRoles,
+    requirePermission,
+    requireAnyPermission,
+    requireAllPermissions,
   };
 };

@@ -2,11 +2,17 @@ import { paginatedResponse, successResponse } from "@shared/ultils/reponses";
 import { UserUseCase } from "../service";
 import {Response, Request, NextFunction, Router} from "express";
 import { ERR_NOT_FOUND, ERR_UNAUTHORIZED } from "@shared/ultils/error";
-import { Requester } from "@shared/interfaces";
+import { Requester, MdlFactory } from "@shared/interfaces";
 import { pagingDTOSchema } from "@shared/model/paging";
 import { UserCondDTO } from "../model";
+import { Permission } from "@shared/model/permissions";
+import { getUserPermissions } from "../model/role-permissions";
+
 export class UserHTTPService {
-  constructor(private readonly usecase: UserUseCase) {}
+  constructor(
+    private readonly usecase: UserUseCase,
+    private readonly mdlFactory?: MdlFactory
+  ) {}
 
   async registerAPI(req: Request, res: Response) {
     const data = await this.usecase.register(req.body);
@@ -134,20 +140,50 @@ export class UserHTTPService {
     };
     paginatedResponse(sanitizedData, {}, res);
   }
+
+  async getUserPermissionsAPI(req: Request, res: Response) {
+    const requester = res.locals.requester as Requester;
+    const permissions = getUserPermissions(requester.role);
+    
+    successResponse({
+      userId: requester.sub,
+      role: requester.role,
+      permissions
+    }, res);
+  }
   getRoutes(): Router {
     const router = Router();
+    
+    // Public endpoints (no auth required)
     router.post("/register", this.registerAPI.bind(this));
     router.post("/authenticate", this.loginAPI.bind(this));
-    router.post("/auth/refresh", this.refreshTokenAPI.bind(this));
-    router.post("/auth/logout", this.logoutAPI.bind(this));
-    router.get("/profile", this.profileAPI.bind(this));
-    router.patch("/profile", this.updateProfileAPI.bind(this));
 
-    router.post("/users", this.registerAPI.bind(this));
-    router.patch("/users/:id", this.updateProfileAPI.bind(this));
-    router.delete("/users/:id", this.deleteAPI.bind(this));
-    router.get("/users/:id", this.getDetailAPI.bind(this));
-    router.get("/users", this.listAPI.bind(this));
+    if (this.mdlFactory) {
+      // Authenticated endpoints
+      router.post("/auth/refresh", this.mdlFactory.auth, this.refreshTokenAPI.bind(this));
+      router.post("/auth/logout", this.mdlFactory.auth, this.logoutAPI.bind(this));
+      router.get("/profile", this.mdlFactory.auth, this.profileAPI.bind(this));
+      router.patch("/profile", this.mdlFactory.auth, this.updateProfileAPI.bind(this));
+      router.get("/auth/permissions", this.mdlFactory.auth, this.getUserPermissionsAPI.bind(this));
+
+      // User management endpoints (admin required)
+      router.post("/users", this.mdlFactory.requirePermission(Permission.USER_WRITE), this.registerAPI.bind(this));
+      router.get("/users", this.mdlFactory.requirePermission(Permission.USER_READ), this.listAPI.bind(this));
+      router.get("/users/:id", this.mdlFactory.requirePermission(Permission.USER_READ), this.getDetailAPI.bind(this));
+      router.patch("/users/:id", this.mdlFactory.requirePermission(Permission.USER_ADMIN), this.updateProfileAPI.bind(this));
+      router.delete("/users/:id", this.mdlFactory.requirePermission(Permission.USER_DELETE), this.deleteAPI.bind(this));
+    } else {
+      // Fallback without middleware (for backward compatibility)
+      router.post("/auth/refresh", this.refreshTokenAPI.bind(this));
+      router.post("/auth/logout", this.logoutAPI.bind(this));
+      router.get("/profile", this.profileAPI.bind(this));
+      router.patch("/profile", this.updateProfileAPI.bind(this));
+      router.post("/users", this.registerAPI.bind(this));
+      router.patch("/users/:id", this.updateProfileAPI.bind(this));
+      router.delete("/users/:id", this.deleteAPI.bind(this));
+      router.get("/users/:id", this.getDetailAPI.bind(this));
+      router.get("/users", this.listAPI.bind(this));
+    }
 
     // RPC API (use internally)
     router.post("/rpc/introspect", this.introspectAPI.bind(this));

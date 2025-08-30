@@ -1,5 +1,6 @@
 import { AppEvent } from "@shared/model/event";
 import { PublicUser } from "@shared/model/public-user";
+import { Permission } from "@shared/model/permissions";
 import { Handler } from "express";
 
 export * from "./cache";
@@ -48,6 +49,9 @@ export interface MdlFactory {
   auth: Handler;
   optAuth: Handler;
   allowRoles: (roles: UserRole[]) => Handler;
+  requirePermission: (permission: Permission) => Handler;
+  requireAnyPermission: (permissions: Permission[]) => Handler;
+  requireAllPermissions: (permissions: Permission[]) => Handler;
 }
 
 export type ServiceContext = {

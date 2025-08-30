@@ -7,6 +7,8 @@ import { PublicUser } from "@shared/model/public-user";
 import { Topic } from "../model/topic";
 import { paginatedResponse, successResponse } from "@shared/ultils/reponses";
 import { ERR_NOT_FOUND } from "@shared/ultils/error";
+import { Permission } from "@shared/model/permissions";
+import { requireResourceOwnershipOrPermission } from "@shared/middleware/resource-auth";
 
 export class PostHttpService {
   constructor(
@@ -16,6 +18,16 @@ export class PostHttpService {
     private readonly postLikeRPC: IPostLikedRPC,
     private readonly postSavedRPC: IPostSavedRPC
   ) {}
+
+  private async checkPostOwnership(req: Request, requester: Requester): Promise<boolean> {
+    const postId = req.params.id;
+    if (!postId) return false;
+    
+    const post = await this.usecase.getPostById(postId);
+    if (!post) return false;
+    
+    return post.authorId === requester.sub;
+  }
 
   async createPostAPI(req: Request, res: Response) {
     const requester = res.locals.requester as Requester;
@@ -159,11 +171,34 @@ export class PostHttpService {
   getRoutes(mdlFactory: MdlFactory): Router {
     const router = Router();
 
-    router.post("/posts", mdlFactory.auth, this.createPostAPI.bind(this));
-    router.get("/posts", this.listPostAPI.bind(this));
-    router.get("/posts/:id", this.getPostAPI.bind(this));
-    router.patch("/posts/:id", mdlFactory.auth, this.updatePostAPI.bind(this));
-    router.delete("/posts/:id", mdlFactory.auth, this.deletePostAPI.bind(this));
+    // Public read access
+    router.get("/posts", mdlFactory.optAuth, this.listPostAPI.bind(this));
+    router.get("/posts/:id", mdlFactory.optAuth, this.getPostAPI.bind(this));
+
+    // Create post (requires authentication and write permission)
+    router.post("/posts", 
+      mdlFactory.auth, 
+      mdlFactory.requirePermission(Permission.POST_WRITE), 
+      this.createPostAPI.bind(this)
+    );
+
+    // Update post (owner or admin permission)
+    router.patch("/posts/:id", 
+      mdlFactory.auth,
+      requireResourceOwnershipOrPermission(Permission.POST_ADMIN, {
+        customCheck: this.checkPostOwnership.bind(this)
+      }), 
+      this.updatePostAPI.bind(this)
+    );
+
+    // Delete post (owner or admin permission)
+    router.delete("/posts/:id", 
+      mdlFactory.auth,
+      requireResourceOwnershipOrPermission(Permission.POST_DELETE, {
+        customCheck: this.checkPostOwnership.bind(this)
+      }), 
+      this.deletePostAPI.bind(this)
+    );
 
     // RPC API (use internally)
     router.post("/rpc/posts/list-by-ids", this.listPostByIdsAPI.bind(this));

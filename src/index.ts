@@ -35,11 +35,9 @@ async function bootServer(port: number) {
       return next();
     });
 
-    
-
     const topicModule = setupTopicModule(serviceCtx);
     const postModule = setupPostModule(serviceCtx);
-    const userModule = setupUserModule();
+    const userModule = setupUserModule(MdlFactory);
     app.use("/v1", userModule);
     app.use('/v1', topicModule);
     app.use('/v1', postModule);
