@@ -11,6 +11,10 @@ export const appConfig = {
     dsn: process.env.DATABASE_URL || "",
   },
   jwtSecret: process.env.JWT_SECRET_KEY || 'NewSkyWin',
+  auth: {
+    accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
+    refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
+  },
   rpc: {
     introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
     topicServiceURL: process.env.TOPIC_SERVICE_URL || `http://localhost:${port}/v1`,

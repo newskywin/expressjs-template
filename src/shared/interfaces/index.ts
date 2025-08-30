@@ -16,10 +16,23 @@ export interface TokenPayload {
 
 export interface Requester extends TokenPayload {}
 
+export interface AuthTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
 export interface ITokenProvider {
   // generate access token
   generateToken(payload: TokenPayload): Promise<string>;
   verifyToken(token: string): Promise<TokenPayload | null>;
+  generateRefreshToken(payload: TokenPayload): Promise<string>;
+  verifyRefreshToken(token: string): Promise<TokenPayload | null>;
+}
+
+export interface ITokenBlacklist {
+  addToBlacklist(token: string, expiresIn: number): Promise<void>;
+  isBlacklisted(token: string): Promise<boolean>;
 }
 
 export type TokenIntrospectResult = {

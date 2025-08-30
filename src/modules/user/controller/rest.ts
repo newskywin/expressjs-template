@@ -63,6 +63,28 @@ export class UserHTTPService {
     successResponse(result, res);
   }
 
+  async refreshTokenAPI(req: Request, res: Response) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      throw ERR_UNAUTHORIZED.withMessage("Refresh token is required");
+    }
+    
+    const result = await this.usecase.refreshToken(refreshToken);
+    successResponse(result, res);
+  }
+
+  async logoutAPI(req: Request, res: Response) {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { refreshToken } = req.body;
+    
+    if (!accessToken || !refreshToken) {
+      throw ERR_UNAUTHORIZED.withMessage("Both access token and refresh token are required");
+    }
+    
+    await this.usecase.logout(accessToken, refreshToken);
+    successResponse({ message: "Logged out successfully" }, res);
+  }
+
   async getDetailAPI(req: Request, res: Response) {
     const { id } = req.params;
     const result = await this.usecase.getDetail(id);
@@ -116,6 +138,8 @@ export class UserHTTPService {
     const router = Router();
     router.post("/register", this.registerAPI.bind(this));
     router.post("/authenticate", this.loginAPI.bind(this));
+    router.post("/auth/refresh", this.refreshTokenAPI.bind(this));
+    router.post("/auth/logout", this.logoutAPI.bind(this));
     router.get("/profile", this.profileAPI.bind(this));
     router.patch("/profile", this.updateProfileAPI.bind(this));
 

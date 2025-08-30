@@ -1,14 +1,16 @@
-import { Requester, TokenPayload } from "@shared/interfaces";
+import { Requester, TokenPayload, AuthTokenResponse } from "@shared/interfaces";
 import { Paginated, PagingDTO } from "@shared/model/paging";
 import { User, UserCondDTO, UserLoginDTO, UserRegistrationDTO, UserUpdateDTO } from "../model";
 
 export interface IUserUseCase {
-  login(data: UserLoginDTO): Promise<string>;
+  login(data: UserLoginDTO): Promise<AuthTokenResponse>;
   register(data: UserRegistrationDTO): Promise<string>;
   profile(userId: string): Promise<User>;
   updateProfile(requester: Requester, data: UserUpdateDTO): Promise<boolean>;
 
   verifyToken(token: string): Promise<TokenPayload>;
+  refreshToken(refreshToken: string): Promise<AuthTokenResponse>;
+  logout(accessToken: string, refreshToken: string): Promise<boolean>;
   delete(id: string): Promise<boolean>;
   listByIds(ids: string[]): Promise<User[]>;
   list(cond: UserCondDTO, paging: PagingDTO): Promise<Paginated<User>>;

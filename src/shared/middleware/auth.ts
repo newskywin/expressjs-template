@@ -1,4 +1,5 @@
 import { ITokenIntrospect, Requester } from "@shared/interfaces";
+import { TokenBlacklistService } from "@shared/components/token-blacklist";
 import { ERR_TOKEN_INVALID } from "@shared/ultils/error";
 import { Handler, NextFunction, Request, Response } from "express";
 
@@ -10,7 +11,14 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
       throw ERR_TOKEN_INVALID.withLog("Token is missing");
     }
 
-    // 2. Introspect token
+    // 2. Check if token is blacklisted
+    const blacklistService = new TokenBlacklistService();
+    const isBlacklisted = await blacklistService.isBlacklisted(token);
+    if (isBlacklisted) {
+      throw ERR_TOKEN_INVALID.withLog("Token has been revoked");
+    }
+
+    // 3. Introspect token
     const { payload, error, isOk } = await introspector.introspect(token);
 
     if (!isOk) {
@@ -21,7 +29,7 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
 
     const requester = payload as Requester;
 
-    // 3. Set requester to res.locals
+    // 4. Set requester to res.locals
     res.locals["requester"] = requester;
 
     return next();

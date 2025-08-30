@@ -1,4 +1,4 @@
-import { ITokenProvider, Requester, TokenPayload, UserRole } from "@shared/interfaces";
+import { ITokenProvider, Requester, TokenPayload, UserRole, AuthTokenResponse } from "@shared/interfaces";
 import { Paginated, PagingDTO } from "@shared/model/paging";
 
 import bcrypt from 'bcryptjs';
@@ -6,8 +6,9 @@ import { v7 } from "uuid";
 import { IUserRepository, IUserUseCase } from "../interfaces";
 import { Status, User, UserCondDTO, userCondDTOSchema, UserLoginDTO, userLoginDTOSchema, UserRegistrationDTO, userRegistrationDTOSchema, UserUpdateDTO, userUpdateProfileDTOSchema } from "../model";
 
-import { AppError, ERR_NOT_FOUND } from "@shared/ultils/error";
+import { ERR_NOT_FOUND } from "@shared/ultils/error";
 import { ERROR_INVALID_TOKEN, ERROR_INVALID_USERNAME_AND_PASSWORD, ERROR_USER_INACTIVATED, ERROR_USERNAME_EXISTED } from "../model/error";
+import { TokenBlacklistService } from "@shared/components/token-blacklist";
 
 export class UserUseCase implements IUserUseCase {
   constructor(private readonly repository: IUserRepository, readonly authenProvider: ITokenProvider) { }
@@ -40,7 +41,7 @@ export class UserUseCase implements IUserUseCase {
     return { sub: user.id, role: user.role };
   }
 
-  async login(data: UserLoginDTO): Promise<string> {
+  async login(data: UserLoginDTO): Promise<AuthTokenResponse> {
     const dto = userLoginDTOSchema.parse(data);
 
     // 1. Find user with username from DTO
@@ -59,10 +60,16 @@ export class UserUseCase implements IUserUseCase {
       throw ERROR_USER_INACTIVATED;
     }
 
-    // 3. Return token
-    const role = user.role;
-    const token = this.authenProvider.generateToken({ sub: user.id, role });
-    return token;
+    // 3. Generate tokens
+    const payload = { sub: user.id, role: user.role };
+    const accessToken = await this.authenProvider.generateToken(payload);
+    const refreshToken = await this.authenProvider.generateRefreshToken(payload);
+    
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: (this.authenProvider as any).getAccessTokenExpiryInSeconds()
+    };
   }
 
   async register(data: UserRegistrationDTO): Promise<string> {
@@ -98,6 +105,51 @@ export class UserUseCase implements IUserUseCase {
     await this.repository.insert(newUser);
 
     return newId;
+  }
+
+  async refreshToken(refreshToken: string): Promise<AuthTokenResponse> {
+    // 1. Verify refresh token
+    const payload = await this.authenProvider.verifyRefreshToken(refreshToken);
+    if (!payload) {
+      throw ERROR_INVALID_TOKEN.withMessage("Invalid refresh token");
+    }
+
+    // 2. Check if user still exists and is active
+    const user = await this.repository.findById(payload.sub);
+    if (!user || user.status === Status.DELETED || user.status === Status.INACTIVE || user.status === Status.BANNED) {
+      throw ERROR_USER_INACTIVATED;
+    }
+
+    // 3. Generate new tokens
+    const newPayload = { sub: user.id, role: user.role };
+    const accessToken = await this.authenProvider.generateToken(newPayload);
+    const newRefreshToken = await this.authenProvider.generateRefreshToken(newPayload);
+
+    // 4. Blacklist old refresh token
+    const blacklistService = new TokenBlacklistService();
+    const refreshExpirySeconds = (this.authenProvider as any).getRefreshTokenExpiryInSeconds();
+    await blacklistService.addToBlacklist(refreshToken, refreshExpirySeconds);
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: (this.authenProvider as any).getAccessTokenExpiryInSeconds()
+    };
+  }
+
+  async logout(accessToken: string, refreshToken: string): Promise<boolean> {
+    const blacklistService = new TokenBlacklistService();
+    
+    // Blacklist both tokens
+    const accessExpirySeconds = (this.authenProvider as any).getAccessTokenExpiryInSeconds();
+    const refreshExpirySeconds = (this.authenProvider as any).getRefreshTokenExpiryInSeconds();
+    
+    await Promise.all([
+      blacklistService.addToBlacklist(accessToken, accessExpirySeconds),
+      blacklistService.addToBlacklist(refreshToken, refreshExpirySeconds)
+    ]);
+
+    return true;
   }
 
   async updateProfile(requester: Requester, data: UserUpdateDTO): Promise<boolean> {
