@@ -11,3 +11,11 @@ export const ERROR_USERNAME_EXISTED = AppError.from(new Error('Username is alrea
 export const ERROR_INVALID_USERNAME_AND_PASSWORD = AppError.from(new Error('Invalid username and password'),400);
 export const ERROR_USER_INACTIVATED = AppError.from(new Error('User is inactivated or banned'),400);
 export const ERROR_INVALID_TOKEN = AppError.from(new Error('Invalid token'),400);
+
+// Account lockout errors
+export const ERROR_ACCOUNT_LOCKED = AppError.from(new Error('Account is temporarily locked due to multiple failed login attempts. Please try again later.'), 429);
+export const ERROR_MAX_LOGIN_ATTEMPTS = AppError.from(new Error('Maximum login attempts exceeded. Account will be locked.'), 429);
+
+// Password policy errors
+export const ERROR_PASSWORD_TOO_WEAK = AppError.from(new Error('Password does not meet security requirements'), 400);
+export const ERROR_PASSWORD_RECENTLY_USED = AppError.from(new Error('Password was recently used. Please choose a different password.'), 400);

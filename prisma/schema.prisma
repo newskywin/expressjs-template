@@ -206,6 +206,9 @@ model Users {
   followerCount Int?          @default(0) @map("follower_count") @db.UnsignedInt
   postCount     Int?          @default(0) @map("post_count") @db.UnsignedInt
   status        users_status? @default(active) @map("status")
+  loginAttempts Int           @default(0) @map("login_attempts") @db.UnsignedInt
+  lockUntil     DateTime?     @map("lock_until") @db.Timestamp(0)
+  lastLoginAt   DateTime?     @map("last_login_at") @db.Timestamp(0)
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamp(0)
 

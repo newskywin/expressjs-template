@@ -15,6 +15,12 @@ export const appConfig = {
     accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
     refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
   },
+  security: {
+    maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5'),
+    accountLockTime: parseInt(process.env.ACCOUNT_LOCK_TIME || '900000'), // 15 minutes in milliseconds
+    passwordMinLength: parseInt(process.env.PASSWORD_MIN_LENGTH || '8'),
+    passwordHistoryCheck: process.env.PASSWORD_HISTORY_CHECK === 'true' || false,
+  },
   rpc: {
     introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
     topicServiceURL: process.env.TOPIC_SERVICE_URL || `http://localhost:${port}/v1`,

@@ -17,6 +17,14 @@ export enum Status {
 }
 
 
+// Enhanced password validation with stronger security requirements
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/^(?=.*[a-z])/, "Password must contain at least one lowercase letter")
+  .regex(/^(?=.*[A-Z])/, "Password must contain at least one uppercase letter")
+  .regex(/^(?=.*\d)/, "Password must contain at least one number")
+  .regex(/^(?=.*[@$!%*?&])/, "Password must contain at least one special character (@$!%*?&)");
+
 export const userSchema = z.object({
   id: z.string().uuid(),
   avatar: z.string().nullable().optional(),
@@ -31,7 +39,7 @@ export const userSchema = z.object({
       /^[a-zA-Z0-9_]+$/,
       ERROR_USERNAME_INVALID.message,
     ),
-  password: z.string().min(6, ERROR_PASSWORD_AT_LEAST_6_CHARS.message),
+  password: passwordSchema,
   salt: z.string().min(8),
   bio: z.string().nullable().optional(),
   websiteUrl: z.string().nullable().optional(),
@@ -39,6 +47,9 @@ export const userSchema = z.object({
   postCount: z.number().default(0),
   role: z.nativeEnum(UserRole, ERROR_ROLE_INVALID.message),
   status: z.nativeEnum(Status).optional(),
+  loginAttempts: z.number().default(0),
+  lockUntil: z.date().nullable().optional(),
+  lastLoginAt: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -65,12 +76,16 @@ export const userUpdateDTOSchema = userSchema.pick({
   cover: true,
   firstName: true,
   lastName: true,
-  password: true,
   bio: true,
   websiteUrl: true,
   salt: true,
   role: true,
   status: true,
+  loginAttempts: true,
+  lockUntil: true,
+  lastLoginAt: true,
+}).extend({
+  password: passwordSchema.optional(),
 }).partial();
 
 export type UserUpdateDTO = z.infer<typeof userUpdateDTOSchema>;
